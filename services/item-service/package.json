@@ -1,0 +1,11 @@
+{
+  "name": "item-service",
+  "packageManager": "yarn@4.9.4",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
