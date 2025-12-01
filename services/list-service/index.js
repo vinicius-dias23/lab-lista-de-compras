@@ -8,6 +8,7 @@ const { body, validationResult } = require('express-validator');
 // Importar classes compartilhadas
 const JsonDatabase = require('../../shared/JsonDatabase');
 const { getServiceRegistry } = require('../../shared/serviceRegistry');
+const RabbitMQService = require('./rabbitmq');
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -15,6 +16,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'shopping-list-secret-key';
 
 // Database
 const listDb = new JsonDatabase('lists', './data');
+
+// RabbitMQ
+const rabbitMQ = new RabbitMQService();
 
 // Middlewares
 app.use(helmet());
@@ -506,6 +510,77 @@ app.get('/lists/:id/summary', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /lists/:id/checkout - Finalizar compra (com mensageria)
+app.post('/lists/:id/checkout', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const list = await listDb.findById(id);
+    if (!list) {
+      return res.status(404).json({ error: 'Lista não encontrada' });
+    }
+
+    if (list.userId !== req.user.id) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+
+    // Atualizar status da lista para completed
+    const updatedList = await listDb.updateById(id, {
+      status: 'completed',
+      completedAt: new Date().toISOString()
+    });
+
+    // Recalcular resumo
+    const summary = calculateListSummary(updatedList.items || []);
+    await listDb.updateById(id, { summary });
+
+    // Buscar informações do usuário para o evento
+    let userInfo = {
+      id: req.user.id,
+      email: req.user.email || 'usuario@exemplo.com',
+      username: req.user.username || 'Usuario'
+    };
+
+    // Tentar buscar dados completos do usuário
+    try {
+      const userService = serviceRegistry.getService('user-service');
+      if (userService) {
+        const response = await axios.get(`${userService.url}/users/${req.user.id}`, {
+          headers: { 'Authorization': req.headers['authorization'] },
+          timeout: 3000
+        });
+        if (response.data && response.data.user) {
+          userInfo = {
+            id: response.data.user.id,
+            email: response.data.user.email,
+            username: response.data.user.username
+          };
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️  Não foi possível buscar dados do usuário:', error.message);
+    }
+
+    // Publicar evento no RabbitMQ (assíncrono, não bloqueia a resposta)
+    const listWithSummary = { ...updatedList, summary };
+    rabbitMQ.publishCheckoutEvent(listWithSummary, userInfo).catch(err => {
+      console.error('Erro ao publicar evento:', err);
+    });
+
+    // Retornar 202 Accepted imediatamente
+    res.status(202).json({
+      message: 'Checkout processado com sucesso',
+      list: listWithSummary,
+      status: 'accepted',
+      info: 'O processamento assíncrono foi iniciado'
+    });
+
+  } catch (error) {
+    console.error('Erro ao fazer checkout:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // Estatísticas das listas do usuário
 app.get('/stats', authenticateToken, async (req, res) => {
   try {
@@ -552,6 +627,9 @@ async function startService() {
     // Inicializar banco de dados
     await listDb.initialize();
 
+    // Conectar ao RabbitMQ (não bloqueia se falhar)
+    await rabbitMQ.connect();
+
     // Registrar no Service Registry
     await serviceRegistry.initialize();
     await serviceRegistry.registerService('list-service', `http://localhost:${PORT}`, {
@@ -577,6 +655,7 @@ async function startService() {
 process.on('SIGINT', async () => {
   console.log('\n🛑 Desligando List Service...');
   try {
+    await rabbitMQ.close();
     await serviceRegistry.unregisterService('list-service');
     await serviceRegistry.shutdown();
   } catch (error) {

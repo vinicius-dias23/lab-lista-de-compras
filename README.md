@@ -2,7 +2,9 @@
 
 ## 📋 Visão Geral
 
-Sistema completo de microsserviços para gerenciamento de listas de compras desenvolvido em Node.js. O sistema permite que usuários criem e gerenciem suas listas de compras, com um catálogo completo de produtos organizados por categorias.
+Sistema completo de microserviços para gerenciamento de listas de compras desenvolvido em Node.js. O sistema permite que usuários criem e gerenciem suas listas de compras, com um catálogo completo de produtos organizados por categorias.
+
+🆕 **NOVO**: Sistema de **mensageria assíncrona com RabbitMQ** para processamento de eventos de checkout! Veja [MENSAGERIA.md](MENSAGERIA.md) para detalhes..
 
 ## 🏗️ Arquitetura
 
@@ -41,7 +43,8 @@ O sistema é composto por 4 microsserviços principais e um API Gateway:
 ### Pré-requisitos
 
 - Node.js (versão 16 ou superior)
-- Yarn (gerenciador de pacotes)
+- Yarn ou npm (gerenciador de pacotes)
+- Docker e Docker Compose (para RabbitMQ - opcional)
 
 ### Instalação Automática
 
@@ -155,6 +158,7 @@ POST   /lists/:id/items          # Adicionar item à lista
 PUT    /lists/:id/items/:itemId  # Atualizar item na lista
 DELETE /lists/:id/items/:itemId  # Remover item da lista
 GET    /lists/:id/summary        # Resumo da lista
+POST   /lists/:id/checkout       # Finalizar compra (🆕 com mensageria)
 GET    /stats                    # Estatísticas
 ```
 
@@ -338,6 +342,11 @@ lista-compras-microservices/
 - [x] ✅ Paginação de resultados
 - [x] ✅ Validação de dados
 - [x] ✅ Tratamento de erros
+- [x] ✅ 🆕 Mensageria assíncrona com RabbitMQ
+- [x] ✅ 🆕 Producer no List Service (checkout)
+- [x] ✅ 🆕 Consumer de notificações
+- [x] ✅ 🆕 Consumer de analytics
+- [x] ✅ 🆕 Docker Compose para RabbitMQ
 
 ## 🚦 URLs para Teste
 

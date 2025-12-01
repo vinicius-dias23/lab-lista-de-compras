@@ -2,6 +2,7 @@
   "name": "list-service",
   "packageManager": "yarn@4.9.4",
   "dependencies": {
+    "amqplib": "^0.10.9",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
