@@ -64,15 +64,26 @@ chmod +x start-all.sh
 Se preferir instalar manualmente:
 
 ```bash
-# Instalar dependências principais
-yarn install
+# 1. Instalar dependências dos módulos compartilhados (IMPORTANTE!)
+cd shared && npm install && cd ..
 
-# Instalar dependências dos serviços
-cd services/user-service && yarn install && cd ../..
-cd services/item-service && yarn install && cd ../..
-cd services/list-service && yarn install && cd ../..
-cd api-gateway && yarn install && cd ..
+# 2. Instalar dependências dos serviços
+cd services/user-service && npm install && cd ../..
+cd services/item-service && npm install && cd ../..
+cd services/list-service && npm install && cd ../..
+cd api-gateway && npm install && cd ..
+
+# 3. Instalar dependências dos consumers (para mensageria)
+cd consumers && npm install && cd ..
+
+# 4. (Opcional) Instalar dependências para testes
+npm install
 ```
+
+**Notas Importantes**:
+- ⚠️ **OBRIGATÓRIO**: Instale as dependências do diretório `shared/` primeiro!
+- Use `npm install` em vez de `yarn install` para evitar problemas de compatibilidade
+- O diretório `shared/` contém módulos usados por todos os serviços (uuid, axios)
 
 ## 🎮 Como Usar
 
@@ -312,12 +323,15 @@ lista-compras-microservices/
 - **JWT** - Autenticação
 - **bcryptjs** - Hash de senhas
 - **Axios** - Cliente HTTP
+- **UUID** - Geração de identificadores únicos
 - **CORS** - Cross-Origin Resource Sharing
 - **Helmet** - Segurança HTTP
 - **Morgan** - Logging HTTP
-- **http-proxy-middleware** - Proxy para microsserviços
+- **http-proxy-middleware** - Proxy para microserviços
 - **express-rate-limit** - Rate limiting
 - **express-validator** - Validação de dados
+- **RabbitMQ** - Message broker para mensageria assíncrona
+- **amqplib** - Cliente Node.js para RabbitMQ
 
 ## ✅ Funcionalidades Implementadas
 
@@ -364,6 +378,42 @@ Uma vez que os serviços estejam rodando:
 2. Execute `node client-demo.js` para o cliente interativo
 3. Ou use um cliente HTTP como Postman/Insomnia com as URLs acima
 4. Ou acesse diretamente os endpoints no navegador
+
+## 🔧 Troubleshooting
+
+### Erro: "Cannot find module 'express'" ou "Cannot find module 'uuid'"
+
+**Solução**: Certifique-se de instalar as dependências em todos os diretórios necessários:
+
+```bash
+# IMPORTANTE: Instalar dependências compartilhadas primeiro
+cd shared && npm install && cd ..
+
+# Depois instalar nos serviços
+cd services/user-service && npm install && cd ../..
+cd services/item-service && npm install && cd ../..
+cd services/list-service && npm install && cd ../..
+cd api-gateway && npm install && cd ..
+```
+
+### Erro: "ENOENT: no such file or directory, open './shared/registry.json'"
+
+**Solução**: Este erro é normal na primeira execução e não impede o funcionamento. O arquivo será criado automaticamente.
+
+### RabbitMQ não conecta
+
+**Solução**: Verifique se o RabbitMQ está rodando:
+
+```bash
+# Com Docker
+docker-compose up -d
+
+# Verificar status
+docker ps | grep rabbitmq
+
+# Ou se instalado localmente
+sudo systemctl status rabbitmq-server
+```
 
 ## 📞 Suporte
 

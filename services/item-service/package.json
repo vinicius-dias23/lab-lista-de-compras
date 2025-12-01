@@ -1,11 +1,18 @@
 {
   "name": "item-service",
-  "packageManager": "yarn@4.9.4",
+  "version": "1.0.0",
+  "description": "Item Service - Catálogo de produtos e categorias",
+  "main": "index.js",
+  "scripts": {
+    "start": "node start.js"
+  },
   "dependencies": {
+    "axios": "^1.7.9",
     "cors": "^2.8.5",
-    "express": "^5.1.0",
+    "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^11.0.3"
   }
 }

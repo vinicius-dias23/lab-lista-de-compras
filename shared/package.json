@@ -1,0 +1,10 @@
+{
+  "name": "shared-modules",
+  "version": "1.0.0",
+  "description": "Módulos compartilhados entre os microsserviços",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "uuid": "^11.0.3"
+  }
+}
